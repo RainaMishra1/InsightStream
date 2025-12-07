@@ -1,0 +1,42 @@
+# Django Core
+Django==5.0.1
+djangorestframework==3.14.0
+django-cors-headers==4.3.1
+
+# Database
+psycopg2-binary==2.9.9
+dj-database-url==2.1.0
+
+# Celery & Redis
+celery==5.3.6
+redis==5.0.1
+
+# AI Services
+google-generativeai==0.3.2
+replicate==0.23.1
+openai==1.10.0
+
+# Image Processing
+imagekitio==3.2.0
+Pillow==10.2.0
+
+# HTTP & API
+requests==2.31.0
+httpx==0.26.0
+
+# YouTube API
+google-api-python-client==2.116.0
+
+# Environment Variables
+python-dotenv==1.0.1
+
+# Utilities
+python-dateutil==2.8.2
+
+# Testing (optional)
+hypothesis==6.98.3
+pytest==7.4.4
+pytest-django==4.7.0
+
+# Production Server
+gunicorn==21.2.0

@@ -1,0 +1,290 @@
+{% extends 'base.html' %}
+
+{% block title %}Keyword Research - YouTube Tools{% endblock %}
+
+{% block content %}
+<div x-data="keywordResearch()" class="max-w-7xl mx-auto">
+    <!-- Page Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Keyword Research</h1>
+        <p class="text-gray-600">Discover trending keywords, search volumes, and content ideas for your YouTube videos.</p>
+    </div>
+
+    <!-- Research Form -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <form @submit.prevent="performResearch" class="space-y-4">
+            <div>
+                <label for="topic" class="block text-sm font-medium text-gray-700 mb-2">
+                    Video Topic *
+                </label>
+                <div class="flex space-x-2">
+                    <input
+                        id="topic"
+                        type="text"
+                        x-model="topic"
+                        placeholder="e.g., 'Python programming', 'Fitness tips', 'Gaming tutorials'"
+                        class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                        :disabled="loading"
+                        required
+                    />
+                    <button
+                        type="submit"
+                        :disabled="loading || !topic"
+                        class="px-6 py-3 bg-primary text-white font-medium rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed whitespace-nowrap"
+                    >
+                        <span x-show="!loading" class="flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            Research
+                        </span>
+                        <span x-show="loading" class="flex items-center">
+                            <svg class="animate-spin h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Analyzing...
+                        </span>
+                    </button>
+                </div>
+                <p class="mt-1 text-sm text-gray-500">Enter your video topic to get keyword insights</p>
+            </div>
+        </form>
+    </div>
+
+    <!-- Error Message -->
+    <div x-show="errorMessage" x-transition class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-8">
+        <div class="flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span x-text="errorMessage"></span>
+        </div>
+    </div>
+
+    <!-- Results Container -->
+    <div x-show="hasResults" x-transition class="space-y-6">
+        <!-- Primary Keywords -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center mb-4">
+                <svg class="w-6 h-6 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                </svg>
+                <h2 class="text-xl font-bold text-gray-900">Primary Keywords</h2>
+            </div>
+            <div x-show="results.primary_keywords && results.primary_keywords.length > 0" class="space-y-3">
+                <template x-for="keyword in results.primary_keywords" :key="keyword.keyword">
+                    <div class="flex items-center justify-between p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                        <div class="flex-1">
+                            <p class="font-medium text-gray-900" x-text="keyword.keyword"></p>
+                            <div class="flex items-center space-x-4 mt-1 text-sm text-gray-600">
+                                <span class="flex items-center">
+                                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z"></path>
+                                    </svg>
+                                    Search Volume: <span class="font-medium ml-1" x-text="keyword.search_volume || 'N/A'"></span>
+                                </span>
+                                <span class="flex items-center">
+                                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Competition: <span class="font-medium ml-1" x-text="keyword.competition || 'N/A'"></span>
+                                </span>
+                            </div>
+                        </div>
+                        <button
+                            @click="copyToClipboard(keyword.keyword)"
+                            class="ml-4 p-2 text-blue-600 hover:bg-blue-200 rounded-lg transition-colors"
+                            title="Copy keyword"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </template>
+            </div>
+            <p x-show="!results.primary_keywords || results.primary_keywords.length === 0" class="text-gray-500 text-center py-4">
+                No primary keywords found
+            </p>
+        </div>
+
+        <!-- Long-tail Keywords -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center mb-4">
+                <svg class="w-6 h-6 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                </svg>
+                <h2 class="text-xl font-bold text-gray-900">Long-tail Keywords</h2>
+            </div>
+            <div x-show="results.long_tail_keywords && results.long_tail_keywords.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <template x-for="keyword in results.long_tail_keywords" :key="keyword.keyword">
+                    <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
+                        <p class="text-sm text-gray-900" x-text="keyword.keyword"></p>
+                        <button
+                            @click="copyToClipboard(keyword.keyword)"
+                            class="ml-2 p-1 text-green-600 hover:bg-green-200 rounded transition-colors"
+                            title="Copy keyword"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </template>
+            </div>
+            <p x-show="!results.long_tail_keywords || results.long_tail_keywords.length === 0" class="text-gray-500 text-center py-4">
+                No long-tail keywords found
+            </p>
+        </div>
+
+        <!-- Trending Keywords -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center mb-4">
+                <svg class="w-6 h-6 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                </svg>
+                <h2 class="text-xl font-bold text-gray-900">Trending Keywords</h2>
+            </div>
+            <div x-show="results.trending_keywords && results.trending_keywords.length > 0" class="space-y-3">
+                <template x-for="keyword in results.trending_keywords" :key="keyword.keyword">
+                    <div class="flex items-center justify-between p-4 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">
+                        <div class="flex-1">
+                            <p class="font-medium text-gray-900" x-text="keyword.keyword"></p>
+                            <p x-show="keyword.trend" class="text-sm text-red-600 mt-1" x-text="'Trend: ' + keyword.trend"></p>
+                        </div>
+                        <button
+                            @click="copyToClipboard(keyword.keyword)"
+                            class="ml-4 p-2 text-red-600 hover:bg-red-200 rounded-lg transition-colors"
+                            title="Copy keyword"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </template>
+            </div>
+            <p x-show="!results.trending_keywords || results.trending_keywords.length === 0" class="text-gray-500 text-center py-4">
+                No trending keywords found
+            </p>
+        </div>
+
+        <!-- Related Topics -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center mb-4">
+                <svg class="w-6 h-6 text-purple-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+                <h2 class="text-xl font-bold text-gray-900">Related Topics</h2>
+            </div>
+            <div x-show="results.related_topics && results.related_topics.length > 0" class="flex flex-wrap gap-2">
+                <template x-for="topic in results.related_topics" :key="topic">
+                    <span class="px-4 py-2 bg-purple-50 text-purple-700 rounded-full text-sm font-medium hover:bg-purple-100 transition-colors cursor-pointer" x-text="topic"></span>
+                </template>
+            </div>
+            <p x-show="!results.related_topics || results.related_topics.length === 0" class="text-gray-500 text-center py-4">
+                No related topics found
+            </p>
+        </div>
+
+        <!-- Content Suggestions -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center mb-4">
+                <svg class="w-6 h-6 text-yellow-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                </svg>
+                <h2 class="text-xl font-bold text-gray-900">Content Suggestions</h2>
+            </div>
+            <div x-show="results.content_suggestions && results.content_suggestions.length > 0" class="space-y-3">
+                <template x-for="(suggestion, index) in results.content_suggestions" :key="index">
+                    <div class="p-4 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors">
+                        <p class="text-gray-900" x-text="suggestion"></p>
+                    </div>
+                </template>
+            </div>
+            <p x-show="!results.content_suggestions || results.content_suggestions.length === 0" class="text-gray-500 text-center py-4">
+                No content suggestions found
+            </p>
+        </div>
+    </div>
+
+    <!-- Empty State -->
+    <div x-show="!loading && !hasResults" class="bg-white rounded-lg shadow-md p-12 text-center">
+        <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+        </svg>
+        <h3 class="text-lg font-medium text-gray-900 mb-2">Start Your Keyword Research</h3>
+        <p class="text-gray-600">Enter a topic above to discover trending keywords and content ideas</p>
+    </div>
+
+    <!-- Copy Notification -->
+    <div
+        x-show="showCopyNotification"
+        x-transition
+        class="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg"
+    >
+        Copied to clipboard!
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function keywordResearch() {
+    return {
+        topic: '',
+        loading: false,
+        hasResults: false,
+        results: {},
+        errorMessage: '',
+        showCopyNotification: false,
+        
+        async performResearch() {
+            if (!this.topic) return;
+            
+            this.loading = true;
+            this.errorMessage = '';
+            this.hasResults = false;
+            
+            try {
+                const response = await fetch('/api/keyword-research', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: JSON.stringify({ topic: this.topic })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    this.results = data.data || {};
+                    this.hasResults = true;
+                } else {
+                    this.errorMessage = data.error || 'Research failed. Please try again.';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                this.errorMessage = 'Network error. Please try again.';
+            } finally {
+                this.loading = false;
+            }
+        },
+        
+        async copyToClipboard(text) {
+            try {
+                await navigator.clipboard.writeText(text);
+                this.showCopyNotification = true;
+                setTimeout(() => {
+                    this.showCopyNotification = false;
+                }, 2000);
+            } catch (error) {
+                console.error('Failed to copy:', error);
+            }
+        }
+    }
+}
+</script>
+{% endblock %}
