@@ -21,7 +21,7 @@ def register_view(request):
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
             user = form.save()
-            login(request, user)
+            login(request, user, backend='accounts.backends.EmailBackend')
             messages.success(request, 'Registration successful! Welcome to YouTube Tools.')
             return redirect('dashboard')
         else:
