@@ -65,27 +65,49 @@ class ThumbnailGenerateAPIView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
         
-        # Queue Celery task
+        # Try Celery first, fallback to direct processing
         try:
-            task = generate_thumbnail_task.delay(
-                user_input=user_input,
-                ref_image=ref_image_data,
-                user_email=request.user.email
-            )
+            from django.conf import settings
+            import redis
             
-            logger.info(f'Thumbnail generation task queued: {task.id}')
-            
-            return Response({
-                'success': True,
-                'task_id': task.id,
-                'status': 'processing',
-                'message': 'Thumbnail generation started'
-            }, status=status.HTTP_202_ACCEPTED)
+            # Check if Redis is available
+            try:
+                redis_client = redis.from_url(settings.CELERY_BROKER_URL, socket_connect_timeout=1)
+                redis_client.ping()
+                
+                # Redis available, use Celery
+                task = generate_thumbnail_task.delay(
+                    user_input=user_input,
+                    ref_image=ref_image_data,
+                    user_email=request.user.email
+                )
+                logger.info(f'Thumbnail generation task queued: {task.id}')
+                return Response({
+                    'success': True,
+                    'task_id': task.id,
+                    'status': 'processing',
+                    'message': 'Thumbnail generation started'
+                }, status=status.HTTP_202_ACCEPTED)
+                
+            except:
+                # Redis not available, process directly
+                logger.warning('Redis not available, processing thumbnail directly')
+                result = generate_thumbnail_task(
+                    user_input=user_input,
+                    ref_image=ref_image_data,
+                    user_email=request.user.email
+                )
+                return Response({
+                    'success': True,
+                    'result': result,
+                    'status': 'completed',
+                    'message': 'Thumbnail generated successfully'
+                }, status=status.HTTP_200_OK)
             
         except Exception as e:
-            logger.error(f'Failed to queue thumbnail task: {e}')
+            logger.error(f'Failed to generate thumbnail: {e}')
             return Response(
-                {'success': False, 'error': 'Failed to queue thumbnail generation'},
+                {'success': False, 'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     
