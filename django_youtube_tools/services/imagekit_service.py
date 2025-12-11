@@ -58,18 +58,14 @@ class ImageKitService:
             else:
                 file_base64 = file_buffer
             
-            # Upload options
-            options = UploadFileRequestOptions(
-                folder=folder,
-                is_published=True,
-                use_unique_file_name=True
-            )
-            
             # Upload to ImageKit
             result = self.imagekit.upload_file(
                 file=file_base64,
                 file_name=filename,
-                options=options
+                options=UploadFileRequestOptions(
+                    folder=folder,
+                    use_unique_file_name=True
+                )
             )
             
             if result and hasattr(result, 'url'):
