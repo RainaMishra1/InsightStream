@@ -41,16 +41,12 @@ def login_view(request):
         email = request.POST.get('username')
         password = request.POST.get('password')
         
-        try:
-            user = User.objects.get(email=email)
-            user = authenticate(request, username=user.username, password=password)
-            if user is not None:
-                login(request, user)
-                messages.success(request, f'Welcome back, {user.email}!')
-                return redirect('dashboard')
-            else:
-                messages.error(request, 'Invalid email or password.')
-        except User.DoesNotExist:
+        user = authenticate(request, email=email, password=password)
+        if user is not None:
+            login(request, user)
+            messages.success(request, f'Welcome back, {user.email}!')
+            return redirect('dashboard')
+        else:
             messages.error(request, 'Invalid email or password.')
         
         form = UserLoginForm()
