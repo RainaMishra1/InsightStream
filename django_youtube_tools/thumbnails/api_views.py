@@ -90,19 +90,38 @@ class ThumbnailGenerateAPIView(APIView):
                 }, status=status.HTTP_202_ACCEPTED)
                 
             except:
-                # Redis not available, process directly
-                logger.warning('Redis not available, processing thumbnail directly')
-                result = generate_thumbnail_task(
-                    user_input=user_input,
-                    ref_image=ref_image_data,
-                    user_email=request.user.email
-                )
+                # Redis not available, return immediate response and process in background
+                logger.warning('Redis not available, starting direct processing')
+                
+                # Import threading for background processing
+                import threading
+                
+                # Create a simple task ID
+                import uuid
+                task_id = str(uuid.uuid4())
+                
+                # Process in background thread
+                def process_thumbnail():
+                    try:
+                        generate_thumbnail_task(
+                            user_input=user_input,
+                            ref_image=ref_image_data,
+                            user_email=request.user.email
+                        )
+                        logger.info(f'Background thumbnail generation completed: {task_id}')
+                    except Exception as e:
+                        logger.error(f'Background thumbnail generation failed: {e}')
+                
+                thread = threading.Thread(target=process_thumbnail)
+                thread.daemon = True
+                thread.start()
+                
                 return Response({
                     'success': True,
-                    'result': result,
-                    'status': 'completed',
-                    'message': 'Thumbnail generated successfully'
-                }, status=status.HTTP_200_OK)
+                    'task_id': task_id,
+                    'status': 'processing',
+                    'message': 'Thumbnail generation started (this may take 30-60 seconds)'
+                }, status=status.HTTP_202_ACCEPTED)
             
         except Exception as e:
             logger.error(f'Failed to generate thumbnail: {e}')
