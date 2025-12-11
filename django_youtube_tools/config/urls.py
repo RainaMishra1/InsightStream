@@ -24,6 +24,7 @@ urlpatterns = [
     # Home page - redirect to dashboard
     path('', RedirectView.as_view(url='/accounts/dashboard/', permanent=False), name='home'),
     path('dashboard/', RedirectView.as_view(url='/accounts/dashboard/', permanent=False), name='dashboard'),
+    path('logout/', RedirectView.as_view(url='/accounts/logout/', permanent=False), name='logout'),
 ]
 
 # Serve static and media files in development

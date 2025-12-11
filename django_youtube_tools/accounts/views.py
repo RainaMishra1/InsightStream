@@ -66,9 +66,11 @@ def login_view(request):
 @login_required
 def logout_view(request):
     """Handle user logout."""
-    logout(request)
-    messages.success(request, 'You have been logged out successfully.')
-    return redirect('accounts:login')
+    if request.method == 'POST':
+        logout(request)
+        messages.success(request, 'You have been logged out successfully.')
+        return redirect('accounts:login')
+    return redirect('dashboard')
 
 
 @login_required
