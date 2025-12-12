@@ -172,27 +172,26 @@ class TaskStatusAPIView(APIView):
             - result: Task result if completed
         """
         try:
-            from celery.result import AsyncResult
+            # Check if user has any new thumbnails (simple polling)
+            recent_thumbnail = Thumbnail.objects.filter(user=request.user).order_by('-created_at').first()
             
-            task_result = AsyncResult(task_id)
-            
-            response_data = {
-                'task_id': task_id,
-                'status': task_result.status,
-            }
-            
-            if task_result.successful():
-                response_data['result'] = task_result.result
-            elif task_result.failed():
-                response_data['error'] = str(task_result.info)
-            
-            return Response(response_data, status=status.HTTP_200_OK)
+            if recent_thumbnail:
+                return Response({
+                    'task_id': task_id,
+                    'status': 'SUCCESS',
+                    'result': ThumbnailSerializer(recent_thumbnail).data
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'task_id': task_id,
+                    'status': 'PENDING'
+                }, status=status.HTTP_200_OK)
             
         except Exception as e:
             logger.error(f'Failed to get task status: {e}')
             return Response(
-                {'success': False, 'error': 'Failed to get task status'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {'task_id': task_id, 'status': 'PENDING'},
+                status=status.HTTP_200_OK
             )
 
 
