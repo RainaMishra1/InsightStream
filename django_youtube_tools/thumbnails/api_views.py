@@ -173,7 +173,7 @@ class TaskStatusAPIView(APIView):
         """
         try:
             # Check if user has any new thumbnails (simple polling)
-            recent_thumbnail = Thumbnail.objects.filter(user=request.user).order_by('-created_at').first()
+            recent_thumbnail = Thumbnail.objects.filter(user=request.user).order_by('-created_on').first()
             
             if recent_thumbnail:
                 return Response({
