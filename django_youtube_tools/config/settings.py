@@ -109,11 +109,13 @@ if DATABASE_URL:
         'default': dj_database_url.parse(DATABASE_URL)
     }
 else:
-    # SQLite for local development
+    # SQLite for local development or production fallback
+    # Use /opt/render/project/data for persistent storage on Render
+    db_path = os.getenv('SQLITE_PATH', str(BASE_DIR / 'db.sqlite3'))
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+            'NAME': db_path,
         }
     }
 
